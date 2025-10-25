@@ -75,7 +75,7 @@ function Front({
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onKeyUp={handleKeyUp}
-                placeholder="Start typing here..."
+                placeholder="Please type the above sentence here..."
                 autoFocus
                 onCopy={(e) => e.preventDefault()}
                 onPaste={(e) => e.preventDefault()}
