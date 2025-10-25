@@ -38,7 +38,7 @@ export default function TypingApp() {
       .filter(d => d && !d.type && d.timeDown !== undefined)
       .map(d => ({
         ...d,
-        timeUp: d.timeUp ?? d.timeDown, // if no release yet, treat as same timeDown
+        timeUp: d.timeUp ?? d.timeDown,
       }))
       .sort((a, b) => a.timeDown - b.timeDown);
   }
@@ -49,7 +49,6 @@ export default function TypingApp() {
       const up = keys[i].timeUp ?? keys[i].timeDown;
       const nextDown = keys[i + 1].timeDown;
 
-      // include both positive (gap) and negative (overlap) intervals
       const delay = nextDown - up;
       delays.push(delay);
     }
@@ -62,7 +61,6 @@ export default function TypingApp() {
       const d = keys[i].timeDown - keys[i - 1].timeDown;
       if (d > 0) ikd.push(d);
     }
-    // Filter statistical outliers (values > mean + 3*std)
     const m = mean(ikd);
     const sd = stdDev(ikd);
     return ikd.filter(v => v <= m + multiplier * sd);
@@ -75,11 +73,10 @@ export default function TypingApp() {
           if (!k.timeUp || k.timeUp < k.timeDown) return 0;
           return k.timeUp - k.timeDown;
         })
-        .filter(v => !isNaN(v)); // Remove invalid values safely
+        .filter(v => !isNaN(v)); 
     }
 
 
-    // numeric helpers
   function mean(arr) {
     if (!arr?.length) return 0;
     return arr.reduce((a, b) => a + b, 0) / arr.length;
@@ -116,7 +113,7 @@ export default function TypingApp() {
   function averageIKD(data) {
   const keys = getKeyArray(data);
   const ikd = getIKDArray(keys)
-    .filter(v => Number.isFinite(v) && v > 0); // Keep finite & positive, but allow any upper bound
+    .filter(v => Number.isFinite(v) && v > 0); 
   
   return ikd.length ? mean(ikd) : 0;
 }
@@ -137,8 +134,7 @@ export default function TypingApp() {
     const keys = getKeyArray(data);
     const ikd = getIKDArray(keys).filter(v => Number.isFinite(v) && v > 0 && v < 5000);
     
-    // More flexible minimum - or consider returning NaN for insufficient data
-    if (ikd.length < 10) return 0; // Or 0, but NaN makes missing data explicit
+    if (ikd.length < 10) return 0; 
     
     const binEdges = [0, 50, 100, 150, 200, 300, 500, 1000, 2000, 5000];
     const bins = new Array(binEdges.length - 1).fill(0);
@@ -152,32 +148,27 @@ export default function TypingApp() {
                 return;
             }
         }
-        // Handle values exactly at 5000
         if (v === 5000) {
             bins[bins.length - 1]++;
             classifiedCount++;
         }
     });
     
-    // Safety check
     if (classifiedCount === 0) return 0;
     
     const probs = bins.map(b => b / classifiedCount).filter(p => p > 0);
     
-    // Minimum entropy requirement
     if (probs.length <= 1) return 0;
     
     const entropy = -probs.reduce((s, p) => s + p * Math.log2(p), 0);
     
-    // Normalize by max possible entropy for these bins
     const maxEntropy = Math.log2(probs.length);
-    return entropy / maxEntropy; // Returns value between 0-1
+    return entropy / maxEntropy;
 }
 
-  // Optional: Add mild outlier filtering
 function skewnessOfIKD(data) {
     const keys = getKeyArray(data);
-    const ikd = getIKDArray(keys).filter(v => v > 0 && v < 10000); // Mild filtering
+    const ikd = getIKDArray(keys).filter(v => v > 0 && v < 10000); 
     if (ikd.length < 2) return 0;
     const m = mean(ikd);
     const sd = stdDev(ikd);
@@ -186,8 +177,6 @@ function skewnessOfIKD(data) {
     const g = ikd.reduce((s,x) => s + Math.pow((x - m), 3), 0) / n;
     return g / Math.pow(sd, 3);
 }
-
-  // Optional: Add mild outlier filtering if you notice noise
 function autocorrLag1IKD(data) {
     const keys = getKeyArray(data);
     const ikd = getIKDArray(keys).filter(v => v > 0 && v < 10000);
@@ -198,11 +187,11 @@ function autocorrLag1IKD(data) {
     return den === 0 ? 0 : num / den;
 }
 
-  const COGNITIVE_PAUSE_THRESHOLD = 500; // ms - typical word/thought boundary
+  const COGNITIVE_PAUSE_THRESHOLD = 500; 
 
 function pauseCount(data) {
     const keys = getKeyArray(data);
-    const ikd = getIKDArray(keys); // Use press-to-press for cognitive pauses
+    const ikd = getIKDArray(keys);
     return ikd.filter(d => d > COGNITIVE_PAUSE_THRESHOLD).length;
 }
 
@@ -210,7 +199,7 @@ function averagePauseLength(data) {
     const keys = getKeyArray(data);
     const ikd = getIKDArray(keys);
     const pauses = ikd.filter(d => d > COGNITIVE_PAUSE_THRESHOLD);
-    return pauses.length > 0 ? mean(pauses) : 0; // 0 means no significant pauses
+    return pauses.length > 0 ? mean(pauses) : 0;
 }
 
   function burstCount(data) {
@@ -218,7 +207,7 @@ function averagePauseLength(data) {
     const ikd = getIKDArray(keys);
     if (!ikd.length) return keys.length ? 1 : 0;
     
-    let bursts = 1; // Start with first burst
+    let bursts = 1; 
     for (const d of ikd) {
         if (d > COGNITIVE_PAUSE_THRESHOLD) bursts++;
     }
@@ -226,12 +215,12 @@ function averagePauseLength(data) {
 }
 function burstAnalysis(data) {
     const keys = getKeyArray(data);
-    const ikd = getIKDArray(keys); // Use press-to-press times for cognitive bursts
+    const ikd = getIKDArray(keys); 
     
     if (!keys.length) return { count: 0, averageLength: 0, maxLength: 0 };
     
     const bursts = [];
-    let currentBurst = 1; // Start with first key
+    let currentBurst = 1; 
     
     for (let i = 0; i < ikd.length; i++) {
         if (ikd[i] > COGNITIVE_PAUSE_THRESHOLD) {
@@ -242,7 +231,6 @@ function burstAnalysis(data) {
         }
     }
     
-    // Add the final burst
     if (currentBurst > 0) {
         bursts.push(currentBurst);
     }
@@ -310,7 +298,7 @@ function backspaceRatio(data) {
   function tempoChangeRate(data) {
     const keys = getKeyArray(data);
     if (keys.length < 3) return 0;
-    const ikd = getIKDArray(keys).filter(v => v > 0); // Remove zeros
+    const ikd = getIKDArray(keys).filter(v => v > 0); 
     if (ikd.length < 2) return 0;
     
     let changes = 0;
@@ -318,7 +306,7 @@ function backspaceRatio(data) {
         const prev = ikd[i-1];
         const cur = ikd[i];
         const change = Math.abs(cur - prev) / prev;
-        if (change > 0.25) changes++; // 25% threshold
+        if (change > 0.25) changes++;
     }
     return changes / (ikd.length - 1);
 }
@@ -333,7 +321,7 @@ function backspaceRatio(data) {
     
     if (totalTimeMinutes <= 0) return 0;
     
-    const wordCount = keys.filter(k => k.key === ' ').length + 1; // Spaces + 1 word
+    const wordCount = keys.filter(k => k.key === ' ').length + 1;
     return Math.round(wordCount / totalTimeMinutes);
 }
 
@@ -350,7 +338,6 @@ function backspaceRatio(data) {
         }
     }
     
-    // Top 10 most common English digraphs
     const commonPairs = ['th', 'he', 'in', 'er', 'an', 're', 'nd', 'at', 'on', 'nt'];
     
     const features = {};
@@ -365,7 +352,6 @@ function backspaceRatio(data) {
   const processParagraphData = useCallback(() => {
     const allData = keystrokeData.current || [];
 
-    // group by paragraphIndex (skip markers if missing)
     const grouped = {};
     for (const entry of allData) {
       const idx = entry.paragraphIndex || 0;
@@ -379,7 +365,6 @@ function backspaceRatio(data) {
 
     for (const idx of sortedKeys) {
       const group = grouped[idx];
-      // create only from group entries (they include both key events and paragraph markers)
       const keys = getKeyArray(group);
 
       const features = {
@@ -411,17 +396,14 @@ function backspaceRatio(data) {
     }
 
     console.log("📊 Paragraph-by-paragraph features (full):", paragraphFeatures);
-    // store processed results
     localStorage.setItem("processedFeaturesFull", JSON.stringify({
       user: name.trim(),
       generatedAt: new Date().toISOString(),
       paragraphs: paragraphFeatures
     }));
 
-    // Also show a table for quick debugging
     try {
       console.table(paragraphFeatures.map(p => {
-        // pick main scalar fields for table
         return {
           name: name,
           avgHoldTime: p.avgHoldTime,
@@ -448,7 +430,6 @@ function backspaceRatio(data) {
         };
       }));
     } catch (e) {
-      // console.table may fail in some environments; ignore
     }
     const userRef = push(ref(db, "data"));
     set(userRef, {
@@ -459,7 +440,6 @@ function backspaceRatio(data) {
     return paragraphFeatures;
   }, [name]);
 
-  // ----------------- MOVE THIS FIRST -----------------
   const handleNext = useCallback((typedValue) => {
     const now = performance.now();
     const paraIndex = currentIndexRef.current + 1;
@@ -486,8 +466,6 @@ function backspaceRatio(data) {
       setStep("thankyou");
     }
   }, [name]);
-
-  // ----------------- THEN DEFINE THIS -----------------
   const handleKeyDown = useCallback((e) => {
     const now = performance.now();
 
@@ -497,7 +475,6 @@ function backspaceRatio(data) {
       return;
     }
 
-    // prevent Enter newlines
     if (e.key === "Enter") {
       e.preventDefault();
       const val = inputRef.current?.value ?? "";
