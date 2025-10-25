@@ -440,34 +440,27 @@ function backspaceRatio(data) {
     return paragraphFeatures;
   }, [name]);
 
-  // ----------------- MOVE THIS FIRST -----------------
 const handleNext = useCallback((typedValue) => {
   const now = performance.now();
   const paraIndex = currentIndexRef.current;
   const expected = paragraphs[paraIndex].trim();
 
-  // ✅ Check if typed text matches expected paragraph exactly
   if (typedValue.trim() !== expected) {
     alert("You must type the full paragraph correctly before proceeding.");
 
-    // 🧹 Clear text area
     setInputText("");
 
-    // 🗑️ Delete keystrokes related to this paragraph
     keystrokeData.current = keystrokeData.current.filter(
       (entry) => entry.paragraphIndex !== paraIndex + 1
     );
 
-    // 🔁 Reset pressed keys
     pressedKeys.current = {};
     modifiers.current = { Shift: false, Ctrl: false, Alt: false, Meta: false };
 
-    // Keep focus for retry
     setTimeout(() => inputRef.current?.focus(), 0);
-    return; // Stop moving forward
+    return;
   }
 
-  // ✅ If correct, store paragraph end event
   keystrokeData.current.push({
     type: "PARAGRAPH_END",
     paragraphIndex: paraIndex + 1,
@@ -475,11 +468,9 @@ const handleNext = useCallback((typedValue) => {
     textTyped: typedValue,
   });
 
-  // Reset input and pressed keys
   setInputText("");
   pressedKeys.current = {};
 
-  // Move to next or finish
   const nextIndex = paraIndex + 1;
   if (nextIndex < paragraphs.length) {
     setCurrentIndex(nextIndex);
@@ -493,17 +484,14 @@ const handleNext = useCallback((typedValue) => {
   }
 }, [name, paragraphs, processParagraphData]);
 
-// ----------------- THEN DEFINE THIS -----------------
 const handleKeyDown = useCallback((e) => {
   const now = performance.now();
 
-  // prevent copy/paste
   if ((e.ctrlKey || e.metaKey) && (e.key === "v" || e.key === "c")) {
     e.preventDefault();
     return;
   }
 
-  // prevent Enter newlines
   if (e.key === "Enter") {
     e.preventDefault();
     const val = inputRef.current?.value ?? "";
