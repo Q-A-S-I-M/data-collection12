@@ -80,8 +80,8 @@ function Front({
                 onCopy={(e) => e.preventDefault()}
                 onPaste={(e) => e.preventDefault()}
                 onCut={(e) => e.preventDefault()}
-                onContextMenu={(e) => e.preventDefault()} // 🖱️ Disable right-click
-                onDrop={(e) => e.preventDefault()} // Prevent drag/drop
+                onContextMenu={(e) => e.preventDefault()} 
+                onDrop={(e) => e.preventDefault()}
                 style={{
                   userSelect: "none",
                   pointerEvents: "auto",
