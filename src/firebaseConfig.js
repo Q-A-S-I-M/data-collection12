@@ -1,4 +1,4 @@
-// src/firebaseConfig.js
+
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 
@@ -12,6 +12,5 @@ const firebaseConfig = {
   measurementId: "G-CQ8XSCMH8Q"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
