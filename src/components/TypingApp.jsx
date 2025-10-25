@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import "../App.css";
 import { ref, set, push } from "firebase/database";
 import { db } from "../firebaseConfig";
+import Front from "./Front";
 
 const paragraphs = [
   "Liam typed the last word, paused, and smiled at the glowing screen.",
@@ -557,63 +557,19 @@ function backspaceRatio(data) {
 
   // ----------------- UI -----------------
   return (
-    <div className="app-container">
-      {step === "name" && (
-        <div className="card animate-up">
-          <h1>Enter your name</h1>
-          <form onSubmit={handleNameSubmit}>
-            <input
-              type="text"
-              value={name}
-              onChange={(e)=>setName(e.target.value)}
-              placeholder="Your name"
-              autoFocus
-              required
-            />
-            <button type="submit">Start</button>
-          </form>
-        </div>
-      )}
+  <Front
+    step={step}
+    name={name}
+    setName={setName}
+    currentIndex={currentIndex}
+    inputText={inputText}
+    setInputText={setInputText}
+    inputRef={inputRef}
+    handleNameSubmit={handleNameSubmit}
+    handleKeyDown={handleKeyDown}
+    handleKeyUp={handleKeyUp}
+    paragraphs={paragraphs}
+  />
+);
 
-      {step === "typing" && currentIndex < paragraphs.length && (
-        <div className="card animate-up">
-          <h2>Paragraph {currentIndex + 1} of {paragraphs.length}</h2>
-          <p className="paragraph">{paragraphs[currentIndex]}</p>
-
-          <textarea
-            ref={inputRef}
-            value={inputText}
-            onChange={(e)=>setInputText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onKeyUp={handleKeyUp}
-            placeholder="Start typing here..."
-            autoFocus
-            onCopy={(e) => e.preventDefault()}
-            onPaste={(e) => e.preventDefault()}
-            onCut={(e) => e.preventDefault()}
-
-            // 🖱️ Disable right-click (context menu)
-            onContextMenu={(e) => e.preventDefault()}
-
-            // Optional: disable drag/drop from outside
-            onDrop={(e) => e.preventDefault()}
-
-            // Optional: disable text selection if needed
-            style={{
-              userSelect: "none",
-              pointerEvents: "auto",
-            }}
-          />
-          <p className="hint">Press Enter to continue</p>
-        </div>
-      )}
-
-      {step === "thankyou" && (
-        <div className="card animate-up">
-          <h1>Thank You, {name}!</h1>
-          <p>Your data have been saved.</p>
-        </div>
-      )}
-    </div>
-  );
 }
