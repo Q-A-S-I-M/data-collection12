@@ -460,103 +460,128 @@ function backspaceRatio(data) {
   }, [name]);
 
   // ----------------- MOVE THIS FIRST -----------------
-  const handleNext = useCallback((typedValue) => {
-    const now = performance.now();
-    const paraIndex = currentIndexRef.current + 1;
+const handleNext = useCallback((typedValue) => {
+  const now = performance.now();
+  const paraIndex = currentIndexRef.current;
+  const expected = paragraphs[paraIndex].trim();
 
-    keystrokeData.current.push({
-      type: "PARAGRAPH_END",
-      paragraphIndex: paraIndex,
-      time: now,
-      textTyped: typedValue
-    });
+  // ✅ Check if typed text matches expected paragraph exactly
+  if (typedValue.trim() !== expected) {
+    alert("You must type the full paragraph correctly before proceeding.");
 
+    // 🧹 Clear text area
     setInputText("");
-    pressedKeys.current = {};
 
-    const nextIndex = currentIndexRef.current + 1;
-    if (nextIndex < paragraphs.length) {
-      setCurrentIndex(nextIndex);
-      currentIndexRef.current = nextIndex;
-      setTimeout(() => inputRef.current?.focus(), 0);
-    } else {
-      const raw = { user: name.trim(), data: keystrokeData.current };
-      localStorage.setItem("rawKeystrokeData", JSON.stringify(raw));
-      processParagraphData();
-      setStep("thankyou");
-    }
-  }, [name]);
+    // 🗑️ Delete keystrokes related to this paragraph
+    keystrokeData.current = keystrokeData.current.filter(
+      (entry) => entry.paragraphIndex !== paraIndex + 1
+    );
 
-  // ----------------- THEN DEFINE THIS -----------------
-  const handleKeyDown = useCallback((e) => {
-    const now = performance.now();
-
-    // prevent copy/paste
-    if ((e.ctrlKey || e.metaKey) && (e.key === "v" || e.key === "c")) {
-      e.preventDefault();
-      return;
-    }
-
-    // prevent Enter newlines
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const val = inputRef.current?.value ?? "";
-      if (!val.trim()) {
-        alert("Please type the sentence before pressing Enter.");
-        inputRef.current?.focus();
-        return;
-      }
-      handleNext(val.trim());
-      return;
-    }
-
-    if (["Shift", "Control", "Alt", "Meta"].includes(e.key)) {
-      modifiers.current[e.key === "Control" ? "Ctrl" : e.key] = true;
-    }
-
-    pressedKeys.current[e.code] = now;
-    keystrokeData.current.push({
-      paragraphIndex: currentIndexRef.current + 1,
-      key: e.key,
-      code: e.code,
-      timeDown: now,
-      timeUp: null,
-    });
-  }, [handleNext]);
-
-  const handleKeyUp = useCallback((e) => {
-    const now = performance.now();
-
-    if (["Shift", "Control", "Alt", "Meta"].includes(e.key)) {
-      modifiers.current[e.key === "Control" ? "Ctrl" : e.key] = false;
-    }
-
-    const reverseIndex = [...keystrokeData.current]
-      .reverse()
-      .findIndex(entry => entry.code === e.code && entry.timeUp === null);
-
-    if (reverseIndex !== -1) {
-      const actualIndex = keystrokeData.current.length - 1 - reverseIndex;
-      keystrokeData.current[actualIndex].timeUp = now;
-    }
-
-    delete pressedKeys.current[e.code];
-  }, []);
-
-  const handleNameSubmit = (e) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    keystrokeData.current = [];
+    // 🔁 Reset pressed keys
     pressedKeys.current = {};
     modifiers.current = { Shift: false, Ctrl: false, Alt: false, Meta: false };
-    setCurrentIndex(0);
-    currentIndexRef.current = 0;
-    setInputText("");
-    setStep("typing");
-  };
 
-  // ----------------- UI -----------------
-  return (
+    // Keep focus for retry
+    setTimeout(() => inputRef.current?.focus(), 0);
+    return; // Stop moving forward
+  }
+
+  // ✅ If correct, store paragraph end event
+  keystrokeData.current.push({
+    type: "PARAGRAPH_END",
+    paragraphIndex: paraIndex + 1,
+    time: now,
+    textTyped: typedValue,
+  });
+
+  // Reset input and pressed keys
+  setInputText("");
+  pressedKeys.current = {};
+
+  // Move to next or finish
+  const nextIndex = paraIndex + 1;
+  if (nextIndex < paragraphs.length) {
+    setCurrentIndex(nextIndex);
+    currentIndexRef.current = nextIndex;
+    setTimeout(() => inputRef.current?.focus(), 0);
+  } else {
+    const raw = { user: name.trim(), data: keystrokeData.current };
+    localStorage.setItem("rawKeystrokeData", JSON.stringify(raw));
+    processParagraphData();
+    setStep("thankyou");
+  }
+}, [name, paragraphs, processParagraphData]);
+
+// ----------------- THEN DEFINE THIS -----------------
+const handleKeyDown = useCallback((e) => {
+  const now = performance.now();
+
+  // prevent copy/paste
+  if ((e.ctrlKey || e.metaKey) && (e.key === "v" || e.key === "c")) {
+    e.preventDefault();
+    return;
+  }
+
+  // prevent Enter newlines
+  if (e.key === "Enter") {
+    e.preventDefault();
+    const val = inputRef.current?.value ?? "";
+    if (!val.trim()) {
+      alert("Please type the sentence before pressing Enter.");
+      inputRef.current?.focus();
+      return;
+    }
+    handleNext(val.trim());
+    return;
+  }
+
+  if (["Shift", "Control", "Alt", "Meta"].includes(e.key)) {
+    modifiers.current[e.key === "Control" ? "Ctrl" : e.key] = true;
+  }
+
+  pressedKeys.current[e.code] = now;
+  keystrokeData.current.push({
+    paragraphIndex: currentIndexRef.current + 1,
+    key: e.key,
+    code: e.code,
+    timeDown: now,
+    timeUp: null,
+  });
+}, [handleNext]);
+
+const handleKeyUp = useCallback((e) => {
+  const now = performance.now();
+
+  if (["Shift", "Control", "Alt", "Meta"].includes(e.key)) {
+    modifiers.current[e.key === "Control" ? "Ctrl" : e.key] = false;
+  }
+
+  const reverseIndex = [...keystrokeData.current]
+    .reverse()
+    .findIndex(entry => entry.code === e.code && entry.timeUp === null);
+
+  if (reverseIndex !== -1) {
+    const actualIndex = keystrokeData.current.length - 1 - reverseIndex;
+    keystrokeData.current[actualIndex].timeUp = now;
+  }
+
+  delete pressedKeys.current[e.code];
+}, []);
+
+const handleNameSubmit = (e) => {
+  e.preventDefault();
+  if (!name.trim()) return;
+  keystrokeData.current = [];
+  pressedKeys.current = {};
+  modifiers.current = { Shift: false, Ctrl: false, Alt: false, Meta: false };
+  setCurrentIndex(0);
+  currentIndexRef.current = 0;
+  setInputText("");
+  setStep("typing");
+};
+
+// ----------------- UI -----------------
+return (
   <Front
     step={step}
     name={name}
