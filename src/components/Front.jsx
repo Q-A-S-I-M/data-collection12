@@ -1,5 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "../App.css";
+
+// A local "database" of sentences to avoid API failures
+const CHALLENGE_QUOTES = [
+  "Technology is changing how we interact with the world every single day. The way we type reveals subtle patterns.",
+  "Every slight hesitation before a complex word and every burst of speed through familiar phrases tells a story.",
+  "The ability to communicate effectively through a keyboard has become a fundamental skill in the modern digital era.",
+  "Observation of these nuances provides deep insight into human-computer interaction and biometric security systems.",
+  "Precision is often more important than raw speed when attempting to build a reliable machine learning model.",
+  "A quick movement of the hands across the rows of keys can produce a wide array of unique rhythmic results."
+];
 
 function Front({
   step,
@@ -22,7 +32,13 @@ function Front({
   const [testInput, setTestInput] = useState("");
   const [predictedUser, setPredictedUser] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const testParagraph = "Technology is changing how we interact with the world every single day. The way we type reveals subtle patterns in our behavior that are often invisible to the naked eye. By capturing these small moments, we can create a more secure and personalized digital experience for everyone involved."; 
+  const [testParagraph, setTestParagraph] = useState("");
+
+  // --- Logic to pick a random local quote ---
+  const pickNewLocalQuote = useCallback(() => {
+    const randomIndex = Math.floor(Math.random() * CHALLENGE_QUOTES.length);
+    setTestParagraph(CHALLENGE_QUOTES[randomIndex]);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -33,8 +49,8 @@ function Front({
   const handleTestSubmit = async () => {
     const featureData = getProcessedDataForAPI();
 
-    if (!featureData || testInput.trim().length < 5) {
-      alert("Please type the sentence completely before submitting.");
+    if (!featureData || testInput.trim().length < testParagraph.length * 0.4) {
+      alert("Please type more of the sentence before submitting.");
       return;
     }
 
@@ -57,13 +73,10 @@ function Front({
   };
 
   const onTestKeyDown = (e) => {
-    // 1. Log the keystroke in the parent's ref
     handleKeyDown(e);
-    
-    // 2. Intercept Enter specifically for Testing
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      e.stopPropagation(); // THIS PREVENTS THE PARENT ALERT
+      e.stopPropagation(); 
       handleTestSubmit();
     }
   };
@@ -73,19 +86,11 @@ function Front({
     setTestInput("");
     setPredictedUser(null);
     setMode("testing");
+    pickNewLocalQuote(); // Instant, no API wait!
   };
 
   return (
     <div className="app-container">
-      {isMobile && (
-        <div className="mobile-block">
-          <div className="card animate-up">
-            <h1>Desktop Only</h1>
-            <p>Please open this site on a computer to continue.</p>
-          </div>
-        </div>
-      )}
-
       {!isMobile && (
         <>
           {!mode && (
@@ -120,10 +125,8 @@ function Front({
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onKeyUp={handleKeyUp}
-                    placeholder="Please type the above sentence here..."
+                    placeholder="Please type the above sentence..."
                     autoFocus
-                    onCopy={(e) => e.preventDefault()}
-                    onPaste={(e) => e.preventDefault()}
                   />
                   <p className="hint">Press Enter to continue</p>
                 </div>
@@ -148,12 +151,12 @@ function Front({
               ) : predictedUser ? (
                 <div className="result-area">
                   <h2 style={{ color: '#4CAF50' }}>Predicted User: {predictedUser}</h2>
-                  {/* Clean Flexbox spacing for Result Buttons */}
                   <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', marginTop: '20px' }}>
                     <button onClick={() => { 
                       setPredictedUser(null); 
                       setTestInput(""); 
                       clearKeystrokes(); 
+                      pickNewLocalQuote(); 
                     }}>Try Again</button>
                     <button onClick={() => setMode(null)} style={{ backgroundColor: '#666' }}>Exit</button>
                   </div>
@@ -166,13 +169,10 @@ function Front({
                     onChange={(e) => setTestInput(e.target.value)}
                     onKeyDown={onTestKeyDown}
                     onKeyUp={handleKeyUp}
-                    placeholder="Type the test sentence and press Enter..."
+                    placeholder="Type the sentence and press Enter..."
                     autoFocus
-                    onCopy={(e) => e.preventDefault()}
-                    onPaste={(e) => e.preventDefault()}
                   />
                   <p className="hint">Press Enter to predict user identity</p>
-                  {/* Spacing for Back Button */}
                   <div style={{ marginTop: '20px' }}>
                     <button onClick={() => setMode(null)} style={{ backgroundColor: '#666' }}>Back</button>
                   </div>
