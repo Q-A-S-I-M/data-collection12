@@ -493,15 +493,18 @@ const handleKeyDown = useCallback((e) => {
   }
 
   if (e.key === "Enter") {
-    e.preventDefault();
-    const val = inputRef.current?.value ?? "";
-    if (!val.trim()) {
-      alert("Please type the sentence before pressing Enter.");
-      inputRef.current?.focus();
+    if (step === "typing") {
+      e.preventDefault();
+      const val = inputRef.current?.value ?? "";
+      if (!val.trim()) {
+        alert("Please type the sentence before pressing Enter.");
+        inputRef.current?.focus();
+        return;
+      }
+      handleNext(val.trim());
       return;
     }
-    handleNext(val.trim());
-    return;
+    return; 
   }
 
   if (["Shift", "Control", "Alt", "Meta"].includes(e.key)) {
@@ -549,6 +552,29 @@ const handleNameSubmit = (e) => {
   setStep("typing");
 };
 
+const calculateFeatures = (data, userName) => {
+    if (!data || data.length === 0) return null;
+
+    return {
+        avgHoldTime: +(averageHoldTime(data) || 0).toFixed(3),
+        medianIKD: +(medianIKD(data) || 0).toFixed(3),
+        holdTimeStdDev: +(holdTimeStdDev(data) || 0).toFixed(3),
+        tempoChangeRate: +tempoChangeRate(data).toFixed(3),
+        typingSpeedWPM: typingSpeedWPM(data),
+        entropyIKD: +entropyOfIKD(data).toFixed(3),
+        maxBurstLength: maxBurstLength(data),
+        commonDigraphTiming: +mean(Object.values(commonDigraphTiming(data))).toFixed(3) || 0,
+        skewnessIKD: +skewnessOfIKD(data),
+        ikdStdDev: +(ikdStdDev(data) || 0).toFixed(3),
+        correctionLatencyMean: +correctionLatencyMean(data).toFixed(3),
+        backspaceRatio: +backspaceRatio(data).toFixed(3)
+    };
+};
+
+const getProcessedDataForAPI = useCallback(() => {
+    return calculateFeatures(keystrokeData.current);
+}, [name]);
+
 // ----------------- UI -----------------
 return (
   <Front
@@ -563,6 +589,8 @@ return (
     handleKeyDown={handleKeyDown}
     handleKeyUp={handleKeyUp}
     paragraphs={paragraphs}
+    getProcessedDataForAPI={getProcessedDataForAPI}
+    clearKeystrokes={() => { keystrokeData.current = []; }}
   />
 );
 
